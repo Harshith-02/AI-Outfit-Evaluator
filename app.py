@@ -237,7 +237,3 @@ rec_styles = {
 recommended_items = rec_styles.get(outfit1_data["predicted_style"], ["Classic T-Shirt", "Jeans", "Sneakers"])
 st.write(f"Recommended items for your **{outfit1_data['predicted_style']}** style:")
 st.write(", ".join(recommended_items))
-<<<<<<< HEAD
-
-=======
->>>>>>> deea331 (Add runtime.txt for Python 3.11 and updated requirements.txt for deployment)
