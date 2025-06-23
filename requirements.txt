@@ -1,13 +1,12 @@
-streamlit>=1.26.0
-Pillow>=9.0.0
+cat > requirements.txt << EOF
+streamlit>=1.46.0
 rembg>=2.0.66
-torch>=2.0.0
-torchvision>=0.15.0
+cohere>=5.15.0
+Pillow>=10.3.0
+torch>=2.2.2
+torchvision>=0.17.2
+scikit-learn>=1.4.2
+opencv-python-headless>=4.9.0.80
 clip @ git+https://github.com/openai/CLIP.git
-opencv-python>=4.8.0
-scikit-learn>=1.3.0
-numpy>=1.24.0
-onnxruntime>=1.15.0
-cohere>=5.0.0
-matplotlib>=3.7.0
-colorsys; python_version < "3.12"  # built-in but safe for old versions
+onnxruntime>=1.17.3
+EOF
