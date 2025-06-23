@@ -1,12 +1,10 @@
-cat > requirements.txt << EOF
-streamlit>=1.46.0
-rembg>=2.0.66
-cohere>=5.15.0
-Pillow>=10.3.0
-torch>=2.2.2
-torchvision>=0.17.2
-scikit-learn>=1.4.2
-opencv-python-headless>=4.9.0.80
-clip @ git+https://github.com/openai/CLIP.git
-onnxruntime>=1.17.3
-EOF
+streamlit
+torch
+torchvision
+cohere
+rembg
+opencv-python-headless
+onnxruntime
+scikit-learn
+numpy
+pillow
