@@ -238,4 +238,3 @@ recommended_items = rec_styles.get(outfit1_data["predicted_style"], ["Classic T-
 st.write(f"Recommended items for your **{outfit1_data['predicted_style']}** style:")
 st.write(", ".join(recommended_items))
 
-            st.error(f"Cohere error: {e}")
