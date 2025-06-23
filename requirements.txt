@@ -1,0 +1,12 @@
+streamlit
+rembg
+torch
+opencv-python
+Pillow
+numpy
+scikit-learn
+cohere
+ftfy
+regex
+tqdm
+git+https://github.com/openai/CLIP.git
