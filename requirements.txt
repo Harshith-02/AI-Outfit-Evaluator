@@ -1,10 +1,10 @@
-streamlit
-torch
-torchvision
-cohere
+streamlit==1.26.0
+Pillow
 rembg
+cohere
+torch==2.2.2
+torchvision==0.17.2
 opencv-python-headless
-onnxruntime
+onnxruntime==1.16.3
 scikit-learn
-numpy
-pillow
+clip @ git+https://github.com/openai/CLIP.git
