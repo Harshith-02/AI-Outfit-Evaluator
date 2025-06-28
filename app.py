@@ -27,37 +27,20 @@ compare_mode = st.sidebar.checkbox("Compare with another outfit")
 
 # -------- Upload first outfit --------
 uploaded_file = st.file_uploader("Upload an outfit image", type=["jpg", "jpeg", "png"], key="first")
-
 if uploaded_file is None:
     st.warning("Please upload the first outfit image to proceed.")
     st.stop()
 
-# Read image once
-try:
-    image1 = Image.open(uploaded_file)
-    image1_rgb = image1.convert("RGB")
-except Exception as e:
-    st.error(f"Error reading image: {e}")
-    st.stop()
-
 # -------- Upload second outfit if compare_mode --------
 uploaded_file2 = None
-image2_rgb = None
-
 if compare_mode:
     uploaded_file2 = st.file_uploader("Upload second outfit image for comparison", type=["jpg", "jpeg", "png"], key="second")
     if uploaded_file2 is None:
         st.info("Please upload the second outfit image to compare.")
         st.stop()
-    try:
-        image2 = Image.open(uploaded_file2)
-        image2_rgb = image2.convert("RGB")
-    except Exception as e:
-        st.error(f"Error reading second image: {e}")
-        st.stop()
 
 # -------- Helper: Background removal --------
-def remove_bg(img):
+def remove_bg(img: Image.Image) -> Image.Image:
     with st.spinner("Removing background…"):
         result = remove(img)
         bg_removed_img = (
@@ -80,14 +63,16 @@ def load_clip():
 model, preprocess, device = load_clip()
 
 # -------- Analyze outfit --------
-def analyze_outfit(image, label="Outfit"):
+def analyze_outfit(image: Image.Image, label="Outfit"):
     st.markdown(f"### {label}")
-    st.image(image, use_container_width=True)
+    
+    # Convert PIL Image to NumPy array before passing to st.image
+    st.image(np.array(image), use_container_width=True)
 
     bg_removed = remove_bg(image)
-    st.image(bg_removed, caption="Background Removed", use_container_width=True)
+    st.image(np.array(bg_removed), caption="Background Removed", use_container_width=True)
 
-    # Color harmony
+    # Color harmony calculation
     np_img = cv2.cvtColor(np.array(bg_removed.convert("RGB")), cv2.COLOR_RGB2BGR)
     pixels = np_img.reshape(-1, 3)
     kmeans = KMeans(n_clusters=3, random_state=0, n_init=10).fit(pixels)
@@ -143,12 +128,14 @@ def analyze_outfit(image, label="Outfit"):
     }
 
 # -------- Analyze first outfit --------
-outfit1_data = analyze_outfit(image1_rgb, label="First Outfit")
+image1 = Image.open(uploaded_file).convert("RGB")
+outfit1_data = analyze_outfit(image1, label="First Outfit")
 
 # -------- Analyze second outfit if compare --------
 outfit2_data = None
-if compare_mode and image2_rgb is not None:
-    outfit2_data = analyze_outfit(image2_rgb, label="Second Outfit")
+if compare_mode and uploaded_file2 is not None:
+    image2 = Image.open(uploaded_file2).convert("RGB")
+    outfit2_data = analyze_outfit(image2, label="Second Outfit")
 
 # -------- Compose prompt for AI feedback --------
 def make_prompt(data):
@@ -202,6 +189,7 @@ if compare_mode and outfit2_data:
 
     # Simple comparison logic
     st.subheader("⚖️ Outfit Comparison")
+    # The 0.3 * 0.8 part seems like a placeholder for weather score (80/100)
     score1 = outfit1_data["style_score"] * 0.4 + outfit1_data["color_score"] * 0.3 + 0.3 * 0.8
     score2 = outfit2_data["style_score"] * 0.4 + outfit2_data["color_score"] * 0.3 + 0.3 * 0.8
     if score1 > score2:
