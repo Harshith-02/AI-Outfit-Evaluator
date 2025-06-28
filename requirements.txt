@@ -1,9 +1,9 @@
 streamlit==1.33.0
-torch==2.0.0
+torch==2.7.1
 numpy
 opencv-python-headless
 rembg
 cohere>=2.0.0,<3.0.0
 scikit-learn
 Pillow
-clip-by-openai@git+https://github.com/openai/CLIP.git
+git+https://github.com/openai/CLIP.git#egg=clip
