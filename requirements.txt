@@ -7,3 +7,5 @@ cohere>=2.0.0,<3.0.0
 scikit-learn
 Pillow
 git+https://github.com/openai/CLIP.git#egg=clip
+onnxruntime
+
