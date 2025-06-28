@@ -27,32 +27,36 @@ compare_mode = st.sidebar.checkbox("Compare with another outfit")
 
 # -------- Upload first outfit --------
 uploaded_file = st.file_uploader("Upload an outfit image", type=["jpg", "jpeg", "png"], key="first")
-if not uploaded_file:
+if uploaded_file is None:
+    st.warning("Please upload the first outfit image to proceed.")
     st.stop()
 
 # -------- Upload second outfit if compare_mode --------
 uploaded_file2 = None
 if compare_mode:
     uploaded_file2 = st.file_uploader("Upload second outfit image for comparison", type=["jpg", "jpeg", "png"], key="second")
-    if not uploaded_file2:
+    if uploaded_file2 is None:
         st.info("Please upload the second outfit image to compare.")
         st.stop()
 
 # -------- Helper: Background removal --------
+@st.cache_resource(show_spinner=False)
 def remove_bg(img):
-    with st.spinner("Removing background…"):
-        result = remove(img)
-        bg_removed_img = (
-            Image.open(io.BytesIO(result)).convert("RGBA")
-            if isinstance(result, bytes) else result.convert("RGBA")
-        )
-    return bg_removed_img
+    result = remove(img)
+    return (
+        Image.open(io.BytesIO(result)).convert("RGBA")
+        if isinstance(result, bytes) else result.convert("RGBA")
+    )
 
 # -------- Helper: CLIP model loading --------
 @st.cache_resource(show_spinner=False)
 def load_clip():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load("ViT-B/32", device=device)
+    try:
+        model, preprocess = clip.load("ViT-B/32", device=device)
+    except Exception as e:
+        st.error(f"Failed to load CLIP model: {e}")
+        st.stop()
     return model, preprocess, device
 
 model, preprocess, device = load_clip()
@@ -68,7 +72,7 @@ def analyze_outfit(image, label="Outfit"):
     # Color harmony
     np_img = cv2.cvtColor(np.array(bg_removed.convert("RGB")), cv2.COLOR_RGB2BGR)
     pixels = np_img.reshape(-1, 3)
-    kmeans = KMeans(n_clusters=3, random_state=0).fit(pixels)
+    kmeans = KMeans(n_clusters=3, random_state=0, n_init=10).fit(pixels)
     centers = kmeans.cluster_centers_.astype("uint8")
 
     hues = [colorsys.rgb_to_hsv(*(c / 255))[0] * 360 for c in centers]
@@ -111,7 +115,7 @@ def analyze_outfit(image, label="Outfit"):
 
     with st.expander("Confidence scores"):
         for s, l in zip(similarity, labels):
-            st.progress(float(s), text=f"{l.capitalize()} – {s * 100:.2f}%")
+            st.write(f"{l.capitalize()} – {s * 100:.2f}%")
 
     return {
         "style_score": float(similarity[top_idx]),
@@ -125,7 +129,7 @@ outfit1_data = analyze_outfit(Image.open(uploaded_file).convert("RGB"), label="F
 
 # -------- Analyze second outfit if compare --------
 outfit2_data = None
-if compare_mode and uploaded_file2:
+if compare_mode and uploaded_file2 is not None:
     outfit2_data = analyze_outfit(Image.open(uploaded_file2).convert("RGB"), label="Second Outfit")
 
 # -------- Compose prompt for AI feedback --------
@@ -193,7 +197,7 @@ if compare_mode and outfit2_data:
 def save_feedback(filename, feedback):
     with open(filename, "a", encoding="utf-8") as f:
         f.write("\n\n---\n")
-        f.write(f"Feedback for {filename}:\n")
+        f.write(f"Feedback:\n")
         f.write(feedback)
         f.write("\n")
 
@@ -219,6 +223,7 @@ rec_styles = {
     "Vintage": ["High-Waisted Pants", "Polka Dot Blouse", "Loafers"],
     "Streetwear": ["Hoodie", "Sneakers", "Cap"]
 }
+
 recommended_items = rec_styles.get(outfit1_data["predicted_style"], ["Classic T-Shirt", "Jeans", "Sneakers"])
 st.write(f"Recommended items for your **{outfit1_data['predicted_style']}** style:")
 st.write(", ".join(recommended_items))
