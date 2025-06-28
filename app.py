@@ -12,25 +12,17 @@ cohere_api_key = os.getenv("COHERE_API_KEY")
 co = cohere.Client(cohere_api_key) if cohere_api_key else None
 
 # -------- Page config --------
-st.set_page_config(page_title="AI Outfit Evaluator",
-                   page_icon="🤵",
-                   layout="centered")
+st.set_page_config(page_title="AI Outfit Evaluator", page_icon="🤵", layout="centered")
 st.title("🤵 AI Outfit Evaluator")
 st.caption("Upload an outfit photo → background removed, style & colour harmony scored.")
 
 # -------- Sidebar options --------
 st.sidebar.header("Options")
-
-# Feature 1: Feedback verbosity
 feedback_type = st.sidebar.radio("Feedback detail level", ["Short Verdict", "Detailed Analysis"])
-
-# Feature 3: Target occasion
 target_occasion = st.sidebar.selectbox(
     "Target Occasion",
     ["Casual Outing", "Interview", "Wedding", "Date", "Party", "Business Meeting", "None"]
 )
-
-# Feature 6: Upload second outfit for comparison
 compare_mode = st.sidebar.checkbox("Compare with another outfit")
 
 # -------- Upload first outfit --------
@@ -68,7 +60,6 @@ model, preprocess, device = load_clip()
 # -------- Analyze outfit --------
 def analyze_outfit(image, label="Outfit"):
     st.markdown(f"### {label}")
-
     st.image(image, use_container_width=True)
 
     bg_removed = remove_bg(image)
@@ -158,10 +149,7 @@ def get_ai_feedback(prompt):
         return None
     with st.spinner("Getting AI feedback..."):
         try:
-            resp = co.chat(
-                model="command-r",
-                message=prompt,
-            )
+            resp = co.chat(model="command-r", message=prompt)
             return resp.text.strip()
         except Exception as e:
             st.error(f"Cohere error: {e}")
@@ -178,7 +166,7 @@ if feedback1:
     else:
         st.write(feedback1)
 
-# -------- Feature 6: Compare outfits --------
+# -------- Compare outfits --------
 if compare_mode and outfit2_data:
     prompt2 = make_prompt(outfit2_data)
     feedback2 = get_ai_feedback(prompt2)
@@ -201,7 +189,7 @@ if compare_mode and outfit2_data:
     else:
         st.write("🤵 **Both outfits are equally good!**")
 
-# -------- Feature 7: Save feedback history --------
+# -------- Save feedback history --------
 def save_feedback(filename, feedback):
     with open(filename, "a", encoding="utf-8") as f:
         f.write("\n\n---\n")
@@ -219,10 +207,8 @@ if compare_mode and st.button("💾 Save Feedback for Second Outfit"):
         save_feedback("feedback_history.txt", feedback2)
         st.success("Feedback saved to feedback_history.txt")
 
-# -------- Feature 10: Fashion Item Recommendations (mockup) --------
+# -------- Fashion Recommendations --------
 st.subheader("🛍️ Fashion Recommendations")
-
-# This is a placeholder: you can replace with real API calls to fashion e-commerce sites
 rec_styles = {
     "Casual": ["White Sneakers", "Blue Jeans", "Graphic Tee"],
     "Formal": ["Black Blazer", "White Shirt", "Leather Shoes"],
@@ -233,7 +219,6 @@ rec_styles = {
     "Vintage": ["High-Waisted Pants", "Polka Dot Blouse", "Loafers"],
     "Streetwear": ["Hoodie", "Sneakers", "Cap"]
 }
-
 recommended_items = rec_styles.get(outfit1_data["predicted_style"], ["Classic T-Shirt", "Jeans", "Sneakers"])
 st.write(f"Recommended items for your **{outfit1_data['predicted_style']}** style:")
 st.write(", ".join(recommended_items))
