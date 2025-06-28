@@ -27,26 +27,44 @@ compare_mode = st.sidebar.checkbox("Compare with another outfit")
 
 # -------- Upload first outfit --------
 uploaded_file = st.file_uploader("Upload an outfit image", type=["jpg", "jpeg", "png"], key="first")
+
 if uploaded_file is None:
     st.warning("Please upload the first outfit image to proceed.")
     st.stop()
 
+# Read image once
+try:
+    image1 = Image.open(uploaded_file)
+    image1_rgb = image1.convert("RGB")
+except Exception as e:
+    st.error(f"Error reading image: {e}")
+    st.stop()
+
 # -------- Upload second outfit if compare_mode --------
 uploaded_file2 = None
+image2_rgb = None
+
 if compare_mode:
     uploaded_file2 = st.file_uploader("Upload second outfit image for comparison", type=["jpg", "jpeg", "png"], key="second")
     if uploaded_file2 is None:
         st.info("Please upload the second outfit image to compare.")
         st.stop()
+    try:
+        image2 = Image.open(uploaded_file2)
+        image2_rgb = image2.convert("RGB")
+    except Exception as e:
+        st.error(f"Error reading second image: {e}")
+        st.stop()
 
 # -------- Helper: Background removal --------
-@st.cache_resource(show_spinner=False)
 def remove_bg(img):
-    result = remove(img)
-    return (
-        Image.open(io.BytesIO(result)).convert("RGBA")
-        if isinstance(result, bytes) else result.convert("RGBA")
-    )
+    with st.spinner("Removing background…"):
+        result = remove(img)
+        bg_removed_img = (
+            Image.open(io.BytesIO(result)).convert("RGBA")
+            if isinstance(result, bytes) else result.convert("RGBA")
+        )
+    return bg_removed_img
 
 # -------- Helper: CLIP model loading --------
 @st.cache_resource(show_spinner=False)
@@ -125,12 +143,12 @@ def analyze_outfit(image, label="Outfit"):
     }
 
 # -------- Analyze first outfit --------
-outfit1_data = analyze_outfit(Image.open(uploaded_file).convert("RGB"), label="First Outfit")
+outfit1_data = analyze_outfit(image1_rgb, label="First Outfit")
 
 # -------- Analyze second outfit if compare --------
 outfit2_data = None
-if compare_mode and uploaded_file2 is not None:
-    outfit2_data = analyze_outfit(Image.open(uploaded_file2).convert("RGB"), label="Second Outfit")
+if compare_mode and image2_rgb is not None:
+    outfit2_data = analyze_outfit(image2_rgb, label="Second Outfit")
 
 # -------- Compose prompt for AI feedback --------
 def make_prompt(data):
@@ -197,7 +215,7 @@ if compare_mode and outfit2_data:
 def save_feedback(filename, feedback):
     with open(filename, "a", encoding="utf-8") as f:
         f.write("\n\n---\n")
-        f.write(f"Feedback:\n")
+        f.write("Feedback:\n")
         f.write(feedback)
         f.write("\n")
 
