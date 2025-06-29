@@ -152,13 +152,13 @@ def get_ai_feedback(prompt):
         return None
     with st.spinner("Getting AI feedback..."):
         try:
-            resp = co.chat(
-                model="command-nightly",
-                messages=[{"role": "user", "content": prompt}],
+            resp = co.generate(
+                model="command-xlarge-nightly",
+                prompt=prompt,
                 max_tokens=300,
                 temperature=0.7,
             )
-            return resp.choices[0].message.content.strip()
+            return resp.generations[0].text.strip()
         except Exception as e:
             st.error(f"Cohere error: {e}")
             return None
