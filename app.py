@@ -12,8 +12,8 @@ cohere_api_key = os.getenv("COHERE_API_KEY")
 co = cohere.Client(cohere_api_key) if cohere_api_key else None
 
 # -------- Page config --------
-st.set_page_config(page_title="AI Outfit Evaluator", page_icon="🤵", layout="centered")
-st.title("🤵 AI Outfit Evaluator")
+st.set_page_config(page_title="AI Outfit Evaluator", page_icon="🧅", layout="centered")
+st.title("🧅 AI Outfit Evaluator")
 st.caption("Upload an outfit photo → background removed, style & colour harmony scored.")
 
 # -------- Sidebar options --------
@@ -62,8 +62,8 @@ def load_clip():
 
 model, preprocess, device = load_clip()
 
-# ✅ -------- Very loose outfit detection with threshold 0.25 --------
-def check_is_outfit_image(image, threshold=0.25):
+# -------- Outfit image check with threshold 0.18 --------
+def check_is_outfit_image(image, threshold=0.18):
     prompts = [
         "a person wearing clothes",
         "a full-body fashion photo",
@@ -212,11 +212,11 @@ if compare_mode and outfit2_data:
     score1 = outfit1_data["style_score"] * 0.4 + outfit1_data["color_score"] * 0.3 + 0.3 * 0.8
     score2 = outfit2_data["style_score"] * 0.4 + outfit2_data["color_score"] * 0.3 + 0.3 * 0.8
     if score1 > score2:
-        st.write("🤵 **First outfit is a better choice for your target occasion!**")
+        st.write("🧅 **First outfit is a better choice for your target occasion!**")
     elif score2 > score1:
-        st.write("🤵 **Second outfit is a better choice for your target occasion!**")
+        st.write("🧅 **Second outfit is a better choice for your target occasion!**")
     else:
-        st.write("🤵 **Both outfits are equally good!**")
+        st.write("🧅 **Both outfits are equally good!**")
 
 # -------- Save Feedback --------
 def save_feedback(filename, feedback):
@@ -235,7 +235,7 @@ if compare_mode and st.button("💾 Save Feedback for Second Outfit"):
         st.success("Feedback saved to feedback_history.txt")
 
 # -------- Fashion Suggestions --------
-st.subheader("🛍️ Fashion Recommendations")
+st.subheader("🏍️ Fashion Recommendations")
 rec_styles = {
     "Casual": ["White Sneakers", "Blue Jeans", "Graphic Tee"],
     "Formal": ["Black Blazer", "White Shirt", "Leather Shoes"],
