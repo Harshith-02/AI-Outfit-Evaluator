@@ -145,20 +145,20 @@ Please provide a {'brief verdict with main points' if feedback_type == 'Short Ve
 """
     return prompt_base.strip()
 
-# -------- ✅ Function to get AI feedback using chat API --------
+# -------- ✅ Updated: Function to get AI feedback using generate() --------
 def get_ai_feedback(prompt):
     if not co:
         st.info("Set the COHERE_API_KEY environment variable to enable AI feedback.")
         return None
     with st.spinner("Getting AI feedback..."):
         try:
-            resp = co.chat(
+            resp = co.generate(
                 model="command-r-plus",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
+                prompt=prompt,
                 max_tokens=300,
+                temperature=0.7,
             )
-            return resp.text.strip()
+            return resp.generations[0].text.strip()
         except Exception as e:
             st.error(f"Cohere error: {e}")
             return None
