@@ -62,6 +62,25 @@ def load_clip():
 
 model, preprocess, device = load_clip()
 
+# ✅ -------- Outfit detection function --------
+def check_is_outfit_image(image, threshold=0.3):
+    outfit_prompts = ["a person wearing an outfit", "fashion clothing", "a stylish outfit"]
+    wrong_prompts = ["a cat", "a tree", "a car", "a building", "a close-up face", "food", "scenery"]
+
+    all_prompts = outfit_prompts + wrong_prompts
+    text_tokens = torch.cat([clip.tokenize(f"This is {p}") for p in all_prompts]).to(device)
+    img_tensor = preprocess(image).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        img_feat = model.encode_image(img_tensor)
+        txt_feat = model.encode_text(text_tokens)
+        img_feat /= img_feat.norm(dim=-1, keepdim=True)
+        txt_feat /= txt_feat.norm(dim=-1, keepdim=True)
+        similarity = (img_feat @ txt_feat.T).softmax(dim=-1).cpu().numpy()[0]
+
+    outfit_score = max(similarity[:len(outfit_prompts)])
+    return outfit_score >= threshold
+
 # -------- Analyze outfit --------
 def analyze_outfit(image, label="Outfit"):
     st.markdown(f"### {label}")
@@ -123,12 +142,24 @@ def analyze_outfit(image, label="Outfit"):
 
 # -------- Analyze first outfit --------
 image1 = Image.open(uploaded_file).convert("RGB")
+
+# ✅ Check if it’s an outfit
+if not check_is_outfit_image(image1):
+    st.error("❌ This doesn't seem to be an outfit image. Please upload a picture of a person wearing clothes.")
+    st.stop()
+
 outfit1_data = analyze_outfit(image1, label="First Outfit")
 
 # -------- Analyze second outfit if compare --------
 outfit2_data = None
 if compare_mode and uploaded_file2 is not None:
     image2 = Image.open(uploaded_file2).convert("RGB")
+
+    # ✅ Check if it’s an outfit
+    if not check_is_outfit_image(image2):
+        st.error("❌ Second image doesn't appear to be an outfit. Please upload a valid outfit photo.")
+        st.stop()
+
     outfit2_data = analyze_outfit(image2, label="Second Outfit")
 
 # -------- Compose prompt for AI feedback --------
@@ -145,7 +176,7 @@ Please provide a {'brief verdict with main points' if feedback_type == 'Short Ve
 """
     return prompt_base.strip()
 
-# -------- ✅ Updated: Function to get AI feedback using generate() --------
+# -------- AI feedback --------
 def get_ai_feedback(prompt):
     if not co:
         st.info("Set the COHERE_API_KEY environment variable to enable AI feedback.")
@@ -186,7 +217,6 @@ if compare_mode and outfit2_data:
         else:
             st.write(feedback2)
 
-    # Simple comparison logic
     st.subheader("⚖️ Outfit Comparison")
     score1 = outfit1_data["style_score"] * 0.4 + outfit1_data["color_score"] * 0.3 + 0.3 * 0.8
     score2 = outfit2_data["style_score"] * 0.4 + outfit2_data["color_score"] * 0.3 + 0.3 * 0.8
