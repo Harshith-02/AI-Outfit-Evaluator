@@ -62,8 +62,8 @@ def load_clip():
 
 model, preprocess, device = load_clip()
 
-# ✅ -------- Very loose outfit detection --------
-def check_is_outfit_image(image, threshold=0.12):  # relaxed threshold
+# ✅ -------- Very loose outfit detection with threshold 0.2 --------
+def check_is_outfit_image(image, threshold=0.2):
     prompts = [
         "a person wearing clothes",
         "a full-body fashion photo",
