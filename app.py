@@ -39,7 +39,7 @@ if compare_mode:
         st.info("Please upload the second outfit image to compare.")
         st.stop()
 
-# -------- Helper: Background removal --------
+# -------- Background removal --------
 def remove_bg(img):
     with st.spinner("Removing background…"):
         result = remove(img)
@@ -49,7 +49,7 @@ def remove_bg(img):
         )
     return bg_removed_img
 
-# -------- Helper: CLIP model loading --------
+# -------- CLIP model loading --------
 @st.cache_resource(show_spinner=False)
 def load_clip():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -62,13 +62,16 @@ def load_clip():
 
 model, preprocess, device = load_clip()
 
-# ✅ -------- Outfit detection function --------
-def check_is_outfit_image(image, threshold=0.3):
-    outfit_prompts = ["a person wearing an outfit", "fashion clothing", "a stylish outfit"]
-    wrong_prompts = ["a cat", "a tree", "a car", "a building", "a close-up face", "food", "scenery"]
-
-    all_prompts = outfit_prompts + wrong_prompts
-    text_tokens = torch.cat([clip.tokenize(f"This is {p}") for p in all_prompts]).to(device)
+# ✅ -------- Very loose outfit detection --------
+def check_is_outfit_image(image, threshold=0.12):  # relaxed threshold
+    prompts = [
+        "a person wearing clothes",
+        "a full-body fashion photo",
+        "a stylish outfit",
+        "fashion portrait",
+        "clothes on a model"
+    ]
+    text_tokens = torch.cat([clip.tokenize(f"This is {p}") for p in prompts]).to(device)
     img_tensor = preprocess(image).unsqueeze(0).to(device)
 
     with torch.no_grad():
@@ -78,8 +81,7 @@ def check_is_outfit_image(image, threshold=0.3):
         txt_feat /= txt_feat.norm(dim=-1, keepdim=True)
         similarity = (img_feat @ txt_feat.T).softmax(dim=-1).cpu().numpy()[0]
 
-    outfit_score = max(similarity[:len(outfit_prompts)])
-    return outfit_score >= threshold
+    return max(similarity) >= threshold
 
 # -------- Analyze outfit --------
 def analyze_outfit(image, label="Outfit"):
@@ -142,41 +144,32 @@ def analyze_outfit(image, label="Outfit"):
 
 # -------- Analyze first outfit --------
 image1 = Image.open(uploaded_file).convert("RGB")
-
-# ✅ Check if it’s an outfit
 if not check_is_outfit_image(image1):
     st.error("❌ This doesn't seem to be an outfit image. Please upload a picture of a person wearing clothes.")
     st.stop()
-
 outfit1_data = analyze_outfit(image1, label="First Outfit")
 
-# -------- Analyze second outfit if compare --------
+# -------- Analyze second outfit --------
 outfit2_data = None
 if compare_mode and uploaded_file2 is not None:
     image2 = Image.open(uploaded_file2).convert("RGB")
-
-    # ✅ Check if it’s an outfit
     if not check_is_outfit_image(image2):
         st.error("❌ Second image doesn't appear to be an outfit. Please upload a valid outfit photo.")
         st.stop()
-
     outfit2_data = analyze_outfit(image2, label="Second Outfit")
 
-# -------- Compose prompt for AI feedback --------
+# -------- Prompt creation --------
 def make_prompt(data):
-    prompt_base = f"""
+    return f"""
 Evaluate this outfit:
 Style: {data['predicted_style']}
 Colours (RGB): {data['colors']}
 Weather score: 80 / 100  # Placeholder
-
 Target occasion: {target_occasion if target_occasion != "None" else "No specific occasion"}
-
 Please provide a {'brief verdict with main points' if feedback_type == 'Short Verdict' else 'detailed analysis including suggestions'}.
-"""
-    return prompt_base.strip()
+""".strip()
 
-# -------- AI feedback --------
+# -------- Cohere Feedback --------
 def get_ai_feedback(prompt):
     if not co:
         st.info("Set the COHERE_API_KEY environment variable to enable AI feedback.")
@@ -194,10 +187,9 @@ def get_ai_feedback(prompt):
             st.error(f"Cohere error: {e}")
             return None
 
-# -------- Display feedback for first outfit --------
+# -------- Feedback for outfit 1 --------
 prompt1 = make_prompt(outfit1_data)
 feedback1 = get_ai_feedback(prompt1)
-
 if feedback1:
     st.subheader("⭐ AI Feedback for First Outfit")
     if feedback_type == "Short Verdict":
@@ -205,11 +197,10 @@ if feedback1:
     else:
         st.write(feedback1)
 
-# -------- Compare outfits --------
+# -------- Feedback for outfit 2 --------
 if compare_mode and outfit2_data:
     prompt2 = make_prompt(outfit2_data)
     feedback2 = get_ai_feedback(prompt2)
-
     if feedback2:
         st.subheader("⭐ AI Feedback for Second Outfit")
         if feedback_type == "Short Verdict":
@@ -227,7 +218,7 @@ if compare_mode and outfit2_data:
     else:
         st.write("🤵 **Both outfits are equally good!**")
 
-# -------- Save feedback history --------
+# -------- Save Feedback --------
 def save_feedback(filename, feedback):
     with open(filename, "a", encoding="utf-8") as f:
         f.write("\n\n---\n")
@@ -243,7 +234,7 @@ if compare_mode and st.button("💾 Save Feedback for Second Outfit"):
         save_feedback("feedback_history.txt", feedback2)
         st.success("Feedback saved to feedback_history.txt")
 
-# -------- Fashion Recommendations --------
+# -------- Fashion Suggestions --------
 st.subheader("🛍️ Fashion Recommendations")
 rec_styles = {
     "Casual": ["White Sneakers", "Blue Jeans", "Graphic Tee"],
