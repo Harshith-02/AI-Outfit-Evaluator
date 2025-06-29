@@ -40,7 +40,7 @@ if compare_mode:
         st.stop()
 
 # -------- Helper: Background removal --------
-def remove_bg(img: Image.Image) -> Image.Image:
+def remove_bg(img):
     with st.spinner("Removing background…"):
         result = remove(img)
         bg_removed_img = (
@@ -63,27 +63,21 @@ def load_clip():
 model, preprocess, device = load_clip()
 
 # -------- Analyze outfit --------
-def analyze_outfit(image: Image.Image, label="Outfit"):
+def analyze_outfit(image, label="Outfit"):
     st.markdown(f"### {label}")
-    
-    # Convert PIL Image to NumPy array before passing to st.image
-    st.image(np.array(image), use_container_width=True)
+    st.image(np.array(image))
 
     bg_removed = remove_bg(image)
-    st.image(np.array(bg_removed), caption="Background Removed", use_container_width=True)
+    st.image(np.array(bg_removed), caption="Background Removed")
 
-    # Color harmony calculation
+    # Color harmony
     np_img = cv2.cvtColor(np.array(bg_removed.convert("RGB")), cv2.COLOR_RGB2BGR)
     pixels = np_img.reshape(-1, 3)
     kmeans = KMeans(n_clusters=3, random_state=0, n_init=10).fit(pixels)
     centers = kmeans.cluster_centers_.astype("uint8")
 
     hues = [colorsys.rgb_to_hsv(*(c / 255))[0] * 360 for c in centers]
-
-    def hue_gap(a, b):
-        d = abs(a - b) % 360
-        return min(d, 360 - d)
-
+    def hue_gap(a, b): d = abs(a - b) % 360; return min(d, 360 - d)
     gaps = [hue_gap(h1, h2) for i, h1 in enumerate(hues) for h2 in hues[i + 1:]]
     mean_gap = float(np.mean(gaps))
     harmony_raw = min(abs(mean_gap - 30), abs(mean_gap - 180))
@@ -95,7 +89,7 @@ def analyze_outfit(image: Image.Image, label="Outfit"):
     cols = st.columns(3)
     for i, rgb in enumerate(centers):
         swatch = Image.new("RGB", (80, 80), tuple(map(int, rgb)))
-        cols[i].image(swatch, caption=f"Colour {i + 1}", use_container_width=True)
+        cols[i].image(swatch, caption=f"Colour {i + 1}")
 
     # Style classification using CLIP
     labels = [
@@ -189,7 +183,6 @@ if compare_mode and outfit2_data:
 
     # Simple comparison logic
     st.subheader("⚖️ Outfit Comparison")
-    # The 0.3 * 0.8 part seems like a placeholder for weather score (80/100)
     score1 = outfit1_data["style_score"] * 0.4 + outfit1_data["color_score"] * 0.3 + 0.3 * 0.8
     score2 = outfit2_data["style_score"] * 0.4 + outfit2_data["color_score"] * 0.3 + 0.3 * 0.8
     if score1 > score2:
@@ -203,9 +196,7 @@ if compare_mode and outfit2_data:
 def save_feedback(filename, feedback):
     with open(filename, "a", encoding="utf-8") as f:
         f.write("\n\n---\n")
-        f.write("Feedback:\n")
-        f.write(feedback)
-        f.write("\n")
+        f.write(f"Feedback:\n{feedback}\n")
 
 if st.button("💾 Save Feedback for First Outfit"):
     if feedback1:
@@ -229,7 +220,6 @@ rec_styles = {
     "Vintage": ["High-Waisted Pants", "Polka Dot Blouse", "Loafers"],
     "Streetwear": ["Hoodie", "Sneakers", "Cap"]
 }
-
 recommended_items = rec_styles.get(outfit1_data["predicted_style"], ["Classic T-Shirt", "Jeans", "Sneakers"])
 st.write(f"Recommended items for your **{outfit1_data['predicted_style']}** style:")
 st.write(", ".join(recommended_items))
