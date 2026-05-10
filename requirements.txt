@@ -18,7 +18,7 @@ huggingface_hub==0.32.4
 safetensors==0.5.3
 sentencepiece==0.2.0
 
-mediapipe==0.10.14
+mediapipe==0.10.35
 ultralytics==8.3.161
 
 onnxruntime==1.22.0
