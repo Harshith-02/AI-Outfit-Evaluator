@@ -3,5 +3,5 @@ from fastapi import FastAPI
 app = FastAPI()
 
 @app.get("/")
-async def root():
-    return {"message": "AI Fashion Intelligence API Running"}
+async def home():
+    return {"message": "Backend running successfully"}
